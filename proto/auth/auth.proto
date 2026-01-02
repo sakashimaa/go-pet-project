@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/sakashimaa/go-pet-project/proto/auth";
+
+service AuthService {
+  rpc GetUserInfo(UserInfoRequest) returns (UserInfoResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ValidateUser(ValidateRequest) returns (ValidateResponse);
+  rpc RefreshUser(RefreshRequest) returns (RefreshResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc VerifyUser(VerifyRequest) returns (VerifyResponse);
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+}
+
+message UserInfoRequest {
+  int64 user_id = 1;
+}
+
+message UserInfoResponse {
+  string status = 1;
+  string email = 2;
+  bool is_activated = 3;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  int64 id = 1;
+  string email = 2;
+  string created_at = 3;
+  string updated_at = 4;
+  string activation_token = 5;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message ValidateRequest {
+  string token = 1;
+}
+
+message ValidateResponse {
+  int64 user_id = 1;
+  bool is_activated = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message VerifyRequest {
+  string token = 1;
+}
+
+message VerifyResponse {
+  bool success = 1;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ForgotPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResetPasswordRequest {
+  string token = 1;
+  string password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/.idea/queries/Query.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/.idea/queries/Query_1.sql" value="879480ff-31df-44db-bc8e-a28ae22df185" />
+    <file url="file://$PROJECT_DIR$/docker/postgres/init.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/internal/service/auth_service.go" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220024726_create_users_table.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220080347_create_sessions_table.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220080915_add_index_on_token.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220124034_add_is_activated_column.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220124304_add_activation_token_field_and_index.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+    <file url="file://$PROJECT_DIR$/services/auth/migrations/20251220143432_forgot_password_token_field.up.sql" value="f550594b-a1ba-4739-a020-3e5578a6e8ad" />
+  </component>
+</project>

@@ -1,0 +1,12 @@
+go 1.25.4
+
+use (
+	./proto
+	./services/auth
+	./services/gateway
+	./services/notification
+	./services/product
+	./services/payment
+	./services/order
+	./pkg
+)

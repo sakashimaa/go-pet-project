@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "github.com/sakashimaa/go-pet-project/proto/product";
+
+service ProductService {
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse);
+  rpc GetProduct (GetProductRequest) returns (GetProductResponse);
+  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+  rpc DecreaseStock (DecreaseStockRequest) returns (DecreaseStockResponse);
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
+}
+
+message Product {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price = 4;
+  int64 stock_quantity = 5;
+  string image_url = 6;
+  string category = 7;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string description = 2;
+  int64 price = 3;
+  int64 stock_quantity = 4;
+  string category = 5;
+}
+
+message CreateProductResponse {
+  int64 id = 1;
+}
+
+message GetProductRequest {
+  int64 id = 1;
+}
+
+message GetProductResponse {
+  Product product = 1;
+}
+
+message ListProductsRequest {
+  int64 offset = 1;
+  int64 limit = 2;
+  string search = 3;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  int64 total_count = 2;
+}
+
+message DecreaseStockRequest {
+  int64 product_id = 1;
+  int64 quantity = 2;
+}
+
+message DecreaseStockResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteProductRequest {
+  int64 id = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+}

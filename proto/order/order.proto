@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "github.com/sakashimaa/go-pet-project/proto/order";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+}
+
+message OrderItem {
+  int64 product_id = 1;
+  string name = 2;
+  int64 price = 3;
+  int32 quantity = 4;
+}
+
+message CreateOrderRequest {
+  int64 user_id = 1;
+  repeated OrderItem items = 2;
+}
+
+message CreateOrderResponse {
+  int64 order_id = 1;
+}

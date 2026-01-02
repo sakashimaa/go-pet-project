@@ -1,0 +1,21 @@
+env: "local"
+
+http:
+  port: ":3002"
+
+grpc:
+  port: ":50052"
+
+postgres:
+  url: "postgres://user:password@localhost:5432/auth_db?sslmode=disable"
+
+redis:
+  addr: "localhost:6379"
+
+services:
+  auth_rpc: "localhost:50051"
+  product_rpc: "localhost:50052"
+
+limiter:
+  rps: 20
+  ttl: 1m
