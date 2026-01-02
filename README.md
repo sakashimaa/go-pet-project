@@ -12,7 +12,7 @@ Communication: gRPC (Protobuf), Apache Kafka (Sarama)
 
 Storage: PostgreSQL (pgx driver), Redis (Caching & Idempotency)
 
-Infrastructure: Docker, Docker Compose, Integrating Testing
+Infrastructure: Docker, Docker Compose, Integrating Testing for Auth Microservice
 
 Observability: Prometheus, Grafana, Jaeger (Distributed Tracing), Zap Logger
 
