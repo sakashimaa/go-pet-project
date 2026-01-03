@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakashimaa/go-pet-project/pkg/mylogger"
 	"github.com/sakashimaa/go-pet-project/product/internal/domain"
@@ -271,6 +272,15 @@ func (r *productRepo) Create(ctx context.Context, tx pgx.Tx, product *domain.Pro
 		product.Category,
 	).Scan(&product.ID)
 	if err != nil {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError) {
+			if pgError.Code == "23505" {
+				mylogger.Warn(ctx, r.logger, "Product already exists", zap.String("product_name", product.Name))
+
+				return 0, ErrProductAlreadyExists
+			}
+		}
+
 		span.RecordError(err)
 
 		mylogger.Error(

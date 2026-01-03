@@ -254,9 +254,9 @@ func (s *productService) Create(ctx context.Context, product *domain.Product) (i
 	outboxEvent := &outboxDomain.OutboxEvent{
 		AggregateType: "Product",
 		AggregateID:   fmt.Sprintf("%d", id),
-		EventType:     "OrderCreated",
+		EventType:     "ProductCreated",
 		Payload:       payloadBytes,
-		Topic:         "payment_events",
+		Topic:         "product_events",
 	}
 
 	if err := s.outboxRepo.SaveOutboxEvent(ctx, tx, outboxEvent); err != nil {
@@ -278,7 +278,7 @@ func (s *productService) Create(ctx context.Context, product *domain.Product) (i
 			zap.Error(err),
 		)
 
-		return 0, nil
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return id, nil

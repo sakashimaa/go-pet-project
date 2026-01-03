@@ -17,6 +17,14 @@ type cachedProductService struct {
 	cacheTTL    time.Duration
 }
 
+func NewCachedProductService(next ProductService, redisClient *redis.Client) ProductService {
+	return &cachedProductService{
+		next:        next,
+		redisClient: redisClient,
+		cacheTTL:    time.Minute * 10,
+	}
+}
+
 func (s *cachedProductService) ReserveProduct(ctx context.Context, event *domain.OrderCreatedEvent) error {
 	return s.next.ReserveProduct(ctx, event)
 }
@@ -34,7 +42,17 @@ func (s *cachedProductService) Delete(ctx context.Context, id int64) error {
 }
 
 func (s *cachedProductService) Create(ctx context.Context, product *domain.Product) (int64, error) {
-	return s.next.Create(ctx, product)
+	id, err := s.next.Create(ctx, product)
+	if err != nil {
+		return 0, err
+	}
+
+	product.ID = id
+	if data, err := json.Marshal(product); err == nil {
+		s.redisClient.Set(ctx, fmt.Sprintf("product:%d", product.ID), data, s.cacheTTL)
+	}
+
+	return id, nil
 }
 
 func (s *cachedProductService) FindByID(ctx context.Context, id int64) (*domain.Product, error) {
@@ -77,12 +95,4 @@ func (s *cachedProductService) DecreaseStock(ctx context.Context, id, quantity i
 
 func (s *cachedProductService) ReturnStock(ctx context.Context, event *generalDomain.OrderCancelledEvent) error {
 	return s.next.ReturnStock(ctx, event)
-}
-
-func NewCachedProductService(next ProductService, redisClient *redis.Client) ProductService {
-	return &cachedProductService{
-		next:        next,
-		redisClient: redisClient,
-		cacheTTL:    time.Minute * 10,
-	}
 }
