@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	pb "github.com/sakashimaa/go-pet-project/proto/order"
+)
 
 type OrderStatus string
 
@@ -37,4 +41,13 @@ func (o *Order) CalculateTotal() {
 		total += item.Price * int64(item.Quantity)
 	}
 	o.TotalSum = total
+}
+
+func (i *OrderItem) ToPB() *pb.OrderItem {
+	return &pb.OrderItem{
+		ProductId: i.ProductID,
+		Name:      i.Name,
+		Price:     i.Price,
+		Quantity:  i.Quantity,
+	}
 }

@@ -106,7 +106,7 @@ func (r *orderRepo) GetAllItemsOfOrder(ctx context.Context, tx pgx.Tx, orderID i
 }
 
 func (r *orderRepo) ChangeOrderStatus(ctx context.Context, tx pgx.Tx, orderID int64, status string) error {
-	ctx, span := r.tracer.Start(ctx, "OrderRepository.ChangeOrderStatus")
+	ctx, span := r.tracer.Start(ctx, "OrderRepository.ChangeOrderStatusPaymentSucceeded")
 	defer span.End()
 
 	span.SetAttributes(
@@ -117,7 +117,7 @@ func (r *orderRepo) ChangeOrderStatus(ctx context.Context, tx pgx.Tx, orderID in
 	query := `
 		UPDATE orders
 		SET status = $1
-		WHERE id = $2;
+		WHERE id = $2 AND status != 'paid';
 	`
 
 	commandTag, err := tx.Exec(ctx, query, status, orderID)
@@ -135,6 +135,33 @@ func (r *orderRepo) ChangeOrderStatus(ctx context.Context, tx pgx.Tx, orderID in
 	}
 
 	if commandTag.RowsAffected() == 0 {
+		var currentStatus string
+		checkQuery := `
+			SELECT status
+			FROM orders
+			WHERE id = $1
+		`
+
+		err = tx.QueryRow(ctx, checkQuery, orderID).Scan(&currentStatus)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrOrderNotFound
+			}
+
+			return fmt.Errorf("failed to check order status: %v", err)
+		}
+
+		if currentStatus == "paid" {
+			mylogger.Warn(
+				ctx,
+				r.logger,
+				"Attempt to modify paid order",
+				zap.Int64("order_id", orderID),
+			)
+
+			return ErrOrderAlreadyPaid
+		}
+
 		mylogger.Warn(
 			ctx,
 			r.logger,

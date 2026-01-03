@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	pb "github.com/sakashimaa/go-pet-project/proto/order"
+)
 
 type PaymentSucceededEvent struct {
 	OrderID   int64     `json:"order_id"`
@@ -28,4 +32,13 @@ type OrderItem struct {
 type OrderCancelledEvent struct {
 	OrderID int64       `json:"order_id"`
 	Items   []OrderItem `json:"items"`
+}
+
+func (i *OrderItem) ToPB() *pb.OrderItem {
+	return &pb.OrderItem{
+		ProductId: i.ProductID,
+		Name:      i.Name,
+		Price:     i.Price,
+		Quantity:  i.Quantity,
+	}
 }

@@ -78,7 +78,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg *sarama.ConsumerMessa
 			return err
 		}
 
-		err := c.service.ChangeOrderStatus(ctx, &event)
+		err := c.service.ChangeOrderStatusPaymentSucceeded(ctx, &event)
 		if err != nil {
 			mylogger.Error(ctx, c.logger, "Failed to change order status", zap.Error(err))
 			return err

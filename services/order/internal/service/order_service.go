@@ -24,7 +24,7 @@ import (
 type OrderService interface {
 	HandleUserRegistered(ctx context.Context, event *domain.UserRegisteredEvent) error
 	CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error)
-	ChangeOrderStatus(ctx context.Context, event *generalDomain.PaymentSucceededEvent) error
+	ChangeOrderStatusPaymentSucceeded(ctx context.Context, event *generalDomain.PaymentSucceededEvent) error
 	CancelOrder(ctx context.Context, event *generalDomain.PaymentFailedEvent) error
 }
 
@@ -76,7 +76,7 @@ func (s *orderService) CancelOrder(ctx context.Context, event *generalDomain.Pay
 				zap.Int64("order_id", event.OrderID),
 			)
 
-			return fmt.Errorf("order %d not found", event.OrderID)
+			return err
 		}
 
 		mylogger.Warn(
@@ -102,7 +102,7 @@ func (s *orderService) CancelOrder(ctx context.Context, event *generalDomain.Pay
 		return fmt.Errorf("failed to query items of order: %w", err)
 	}
 
-	err = s.emitEvent(ctx, tx, "OrderCancelled", &generalDomain.OrderCancelledEvent{
+	err = s.emitEvent(ctx, tx, "payment_events", fmt.Sprintf("%d", event.OrderID), "OrderCancelled", &generalDomain.OrderCancelledEvent{
 		OrderID: event.OrderID,
 		Items:   orderItems,
 	})
@@ -118,7 +118,7 @@ func (s *orderService) CancelOrder(ctx context.Context, event *generalDomain.Pay
 	return nil
 }
 
-func (s *orderService) ChangeOrderStatus(ctx context.Context, event *generalDomain.PaymentSucceededEvent) error {
+func (s *orderService) ChangeOrderStatusPaymentSucceeded(ctx context.Context, event *generalDomain.PaymentSucceededEvent) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		mylogger.Error(
@@ -152,7 +152,7 @@ func (s *orderService) ChangeOrderStatus(ctx context.Context, event *generalDoma
 				zap.Int64("order_id", event.OrderID),
 			)
 
-			return fmt.Errorf("order %d not found", event.OrderID)
+			return err
 		}
 
 		mylogger.Error(
@@ -297,6 +297,10 @@ func (s *orderService) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 }
 
 func (s *orderService) HandleUserRegistered(ctx context.Context, event *domain.UserRegisteredEvent) error {
+	if event.UserID <= 0 || event.Email == "" {
+		return fmt.Errorf("user id or email are not provided")
+	}
+
 	ctx, span := s.tracer.Start(ctx, "OrderService.HandleUserRegistered")
 	defer span.End()
 
@@ -327,7 +331,7 @@ func (s *orderService) HandleUserRegistered(ctx context.Context, event *domain.U
 	return nil
 }
 
-func (s *orderService) emitEvent(ctx context.Context, tx pgx.Tx, eventType string, payload any) error {
+func (s *orderService) emitEvent(ctx context.Context, tx pgx.Tx, topic, aggregateId, eventType string, payload any) error {
 	wrapper := map[string]any{
 		"event":   eventType,
 		"payload": payload,
@@ -339,8 +343,11 @@ func (s *orderService) emitEvent(ctx context.Context, tx pgx.Tx, eventType strin
 	}
 
 	outboxEvent := &outboxDomain.OutboxEvent{
-		Topic:   "payment_events",
-		Payload: wrapperBytes,
+		Topic:         topic,
+		AggregateType: "Order",
+		AggregateID:   aggregateId,
+		Payload:       wrapperBytes,
+		EventType:     eventType,
 	}
 
 	return s.outboxRepo.SaveOutboxEvent(ctx, tx, outboxEvent)

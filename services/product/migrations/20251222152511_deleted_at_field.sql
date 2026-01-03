@@ -6,6 +6,6 @@ ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
 
 -- +goose Down
 -- +goose StatementBegin
-ALTER TABLE products
-DROP COLUMN deleted_at;
+-- ALTER TABLE products
+-- DROP COLUMN deleted_at;
 -- +goose StatementEnd

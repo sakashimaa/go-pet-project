@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sakashimaa/go-pet-project/auth/internal/repository"
-	"github.com/sakashimaa/go-pet-project/auth/internal/service"
-	myValidator "github.com/sakashimaa/go-pet-project/auth/pkg/validator"
-	"github.com/sakashimaa/go-pet-project/pkg/kafka"
-	outboxRepository "github.com/sakashimaa/go-pet-project/pkg/outbox/repository"
+	kafka2 "github.com/sakashimaa/go-pet-project/pkg/kafka"
+	repository2 "github.com/sakashimaa/go-pet-project/pkg/outbox/repository"
 	"github.com/sakashimaa/go-pet-project/pkg/outbox/worker"
 	"github.com/sakashimaa/go-pet-project/pkg/testsuite"
+	"github.com/sakashimaa/go-pet-project/product/internal/repository"
+	"github.com/sakashimaa/go-pet-project/product/internal/service"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -18,8 +17,8 @@ import (
 type IntegrationTestSuite struct {
 	testsuite.BaseSuite
 
-	AuthService     service.AuthService
-	TestProducer    kafka.Producer
+	ProductService  service.ProductService
+	TestProducer    kafka2.Producer
 	OutboxProcessor *worker.OutboxProcessor
 	workerCancel    context.CancelFunc
 }
@@ -33,20 +32,18 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 }
 
 func (s *IntegrationTestSuite) SetupTest() {
-	s.BaseSuite.TruncateTable("users")
+	s.BaseSuite.TruncateTable("products")
+	s.BaseSuite.TruncateTable("outbox")
 
 	logger := zap.NewNop()
-	userRepo := repository.NewUserRepository(s.DbPool, logger)
-	outboxRepo := outboxRepository.NewOutboxRepository(s.DbPool, logger)
+	productRepo := repository.NewProductRepository(s.DbPool, logger)
+	outboxRepo := repository2.NewOutboxRepository(s.DbPool, logger)
 
 	var err error
-	s.TestProducer, err = kafka.NewProducer(s.KafkaBrokers)
+	s.TestProducer, err = kafka2.NewProducer(s.KafkaBrokers)
 	s.Require().NoError(err, "failed to create kafka producer")
 
-	validator := myValidator.NewValidator()
-
-	s.AuthService = service.NewAuthService(userRepo, outboxRepo, s.TestProducer, logger, s.DbPool, validator)
-
+	s.ProductService = service.NewProductService(productRepo, outboxRepo, s.DbPool, logger)
 	s.OutboxProcessor = worker.NewOutboxProcessor(s.DbPool, outboxRepo, s.TestProducer, logger)
 
 	workerCtx, cancel := context.WithCancel(s.Ctx)
