@@ -50,7 +50,7 @@ func NewOutboxProcessor(
 		kafkaProducer: producer,
 		logger:        logger,
 		batchSize:     50,
-		interval:      500 * time.Millisecond,
+		interval:      time.Second,
 		tracer:        otel.Tracer("outbox-worker"),
 	}
 }

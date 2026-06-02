@@ -102,7 +102,7 @@ func (s *orderService) CancelOrder(ctx context.Context, event *generalDomain.Pay
 		return fmt.Errorf("failed to query items of order: %w", err)
 	}
 
-	err = s.emitEvent(ctx, tx, "payment_events", fmt.Sprintf("%d", event.OrderID), "OrderCancelled", &generalDomain.OrderCancelledEvent{
+	err = s.emitEvent(ctx, tx, "product_events", fmt.Sprintf("%d", event.OrderID), "OrderCancelled", &generalDomain.OrderCancelledEvent{
 		OrderID: event.OrderID,
 		Items:   orderItems,
 	})
