@@ -193,6 +193,17 @@ func (s *productService) DecreaseStock(ctx context.Context, id, quantity int64) 
 
 		return "", err
 	}
+	defer func() {
+		shutdownCtx := context.WithoutCancel(ctx)
+		if err := tx.Rollback(shutdownCtx); err != nil {
+			mylogger.Warn(
+				shutdownCtx,
+				s.logger,
+				"Failed to rollback transaction",
+				zap.Error(err),
+			)
+		}
+	}()
 
 	_, err = s.productRepo.DecreaseStock(ctx, tx, id, quantity)
 	if err != nil {
@@ -208,10 +219,32 @@ func (s *productService) DecreaseStock(ctx context.Context, id, quantity int64) 
 		return "", err
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		mylogger.Warn(
+			ctx,
+			s.logger,
+			"Failed to commit transaction",
+			zap.Error(err),
+		)
+
+		return "", err
+	}
+
 	return "success", nil
 }
 
 func (s *productService) Create(ctx context.Context, product *domain.Product) (int64, error) {
+	if err := product.Validate(); err != nil {
+		mylogger.Warn(
+			ctx,
+			s.logger,
+			"Validation error",
+			zap.Error(err),
+		)
+
+		return 0, err
+	}
+
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		mylogger.Error(ctx, s.logger, "Error starting transaction", zap.Error(err))

@@ -90,3 +90,17 @@ func (s *IntegrationTestSuite) TestCreateProductContextTimeout_Failed() {
 	s.Require().ErrorIs(err, context.DeadlineExceeded)
 	s.Require().Zero(id)
 }
+
+func (s *IntegrationTestSuite) TestCreateProductInvalidInput() {
+	product := &domain.Product{
+		Name:          "",
+		Description:   "",
+		Price:         -1,
+		StockQuantity: -1,
+		Category:      "",
+	}
+
+	id, err := s.ProductService.Create(s.Ctx, product)
+	s.Require().Error(err)
+	s.Require().Zero(id)
+}

@@ -12,6 +12,7 @@ import (
 	repository2 "github.com/sakashimaa/go-pet-project/pkg/outbox/repository"
 	"github.com/sakashimaa/go-pet-project/pkg/outbox/worker"
 	"github.com/sakashimaa/go-pet-project/pkg/testsuite"
+	"github.com/sakashimaa/go-pet-project/product/internal/domain"
 	"github.com/sakashimaa/go-pet-project/product/internal/repository"
 	"github.com/sakashimaa/go-pet-project/product/internal/service"
 	"github.com/stretchr/testify/suite"
@@ -91,4 +92,18 @@ func (s *IntegrationTestSuite) TearDownTest() {
 
 func TestIntegrationSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
+}
+
+func (s *IntegrationTestSuite) seedProduct(name, description, category string, price, stockQuantity int64) {
+	product := &domain.Product{
+		Name:          name,
+		Description:   description,
+		Category:      category,
+		Price:         price,
+		StockQuantity: stockQuantity,
+	}
+
+	id, err := s.ProductService.Create(s.Ctx, product)
+	s.Require().NoError(err)
+	s.Require().NotZero(id)
 }

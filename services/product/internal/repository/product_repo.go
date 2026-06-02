@@ -42,6 +42,10 @@ func NewProductRepository(pool *pgxpool.Pool, logger *zap.Logger) ProductReposit
 }
 
 func (r *productRepo) IncreaseStock(ctx context.Context, tx pgx.Tx, id int64, quantity int32) error {
+	if id <= 0 || quantity <= 0 {
+		return ErrInvalidInput
+	}
+
 	ctx, span := r.tracer.Start(ctx, "ProductRepository.IncreaseStock")
 	defer span.End()
 
@@ -72,6 +76,10 @@ func (r *productRepo) IncreaseStock(ctx context.Context, tx pgx.Tx, id int64, qu
 }
 
 func (r *productRepo) DecreaseStock(ctx context.Context, tx pgx.Tx, id, quantity int64) (int64, error) {
+	if id <= 0 || quantity <= 0 {
+		return 0, ErrInvalidInput
+	}
+
 	ctx, span := r.tracer.Start(ctx, "ProductRepository.DecreaseStock")
 	defer span.End()
 
@@ -88,6 +96,16 @@ func (r *productRepo) DecreaseStock(ctx context.Context, tx pgx.Tx, id, quantity
 
 	var price int64
 	if err := tx.QueryRow(ctx, productPriceQuery, id).Scan(&price); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			mylogger.Error(
+				ctx,
+				r.logger,
+				"Product not found",
+				zap.Int64("product_id", id),
+			)
+
+			return 0, ErrProductNotFound
+		}
 		mylogger.Error(
 			ctx,
 			r.logger,
@@ -130,6 +148,10 @@ func (r *productRepo) DecreaseStock(ctx context.Context, tx pgx.Tx, id, quantity
 }
 
 func (r *productRepo) Update(ctx context.Context, id int64, input *domain.UpdateProductInput) error {
+	if id <= 0 {
+		return ErrInvalidInput
+	}
+
 	ctx, span := r.tracer.Start(ctx, "ProductRepository.Update")
 	defer span.End()
 
@@ -211,6 +233,10 @@ func (r *productRepo) Update(ctx context.Context, id int64, input *domain.Update
 }
 
 func (r *productRepo) DeleteByID(ctx context.Context, id int64) error {
+	if id <= 0 {
+		return ErrInvalidInput
+	}
+
 	ctx, span := r.tracer.Start(ctx, "ProductRepository.DeleteByID")
 	defer span.End()
 
@@ -237,7 +263,7 @@ func (r *productRepo) DeleteByID(ctx context.Context, id int64) error {
 			zap.Error(err),
 		)
 
-		return fmt.Errorf("error deleting product by id: %v", err)
+		return err
 	}
 
 	if commandTag.RowsAffected() == 0 {
@@ -297,6 +323,10 @@ func (r *productRepo) Create(ctx context.Context, tx pgx.Tx, product *domain.Pro
 }
 
 func (r *productRepo) GetByID(ctx context.Context, id int64) (*domain.Product, error) {
+	if id <= 0 {
+		return nil, ErrInvalidInput
+	}
+
 	ctx, span := r.tracer.Start(ctx, "ProductRepository.GetByID")
 	defer span.End()
 
@@ -347,14 +377,14 @@ func (r *productRepo) List(ctx context.Context, limit, offset int64, search stri
 		attribute.String("search", search),
 	)
 
-	var products []domain.Product
+	products := make([]domain.Product, 0, limit)
 	var totalCount int64
 
 	baseQuery := `SELECT id, name, description, price, stock_quantity,
-		image_url, category, created_at, updated_at
+		image_url, category, created_at, updated_at,
+		COUNT(*) OVER() as total_count,
 		FROM products
 		WHERE deleted_at IS NULL`
-	countQuery := `SELECT COUNT(*) FROM products WHERE deleted_at IS NULL`
 
 	var args []interface{}
 	argId := 1
@@ -362,8 +392,6 @@ func (r *productRepo) List(ctx context.Context, limit, offset int64, search stri
 	if search != "" {
 		filter := fmt.Sprintf(" AND name ILIKE $%d", argId)
 		baseQuery += filter
-		countQuery += filter
-
 		args = append(args, "%"+search+"%")
 		argId++
 	}
@@ -401,6 +429,7 @@ func (r *productRepo) List(ctx context.Context, limit, offset int64, search stri
 			&p.Category,
 			&p.CreatedAt,
 			&p.UpdatedAt,
+			&totalCount,
 		)
 		if err != nil {
 			span.RecordError(err)
@@ -427,25 +456,6 @@ func (r *productRepo) List(ctx context.Context, limit, offset int64, search stri
 		)
 
 		return nil, 0, fmt.Errorf("rows iteration error: %w", err)
-	}
-
-	var countArgs []interface{}
-	if search != "" {
-		countArgs = append(countArgs, args[0])
-	}
-
-	err = r.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&totalCount)
-	if err != nil {
-		span.RecordError(err)
-
-		mylogger.Error(
-			ctx,
-			r.logger,
-			"Failed to count products",
-			zap.Error(err),
-		)
-
-		return nil, 0, fmt.Errorf("failed to count products: %w", err)
 	}
 
 	return products, totalCount, nil
